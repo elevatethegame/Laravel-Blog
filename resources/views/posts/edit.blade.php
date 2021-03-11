@@ -12,5 +12,6 @@
         {{ Form::textarea('body', $post->body, ['id' => 'article-ckeditor', 'class' => 'form-control', 'placeholder' => 'Body Text']) }}
     </div>
     {{ Form::submit('Submit', ['class' => 'btn btn-primary']) }}
+    <a href="/posts/{{$post->id}}" class="btn btn-outline-secondary ml-2">Go Back</a>
     {!! Form::close() !!}
 @endsection
