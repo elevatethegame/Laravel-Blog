@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Post;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class PostsController extends Controller
 {
@@ -49,14 +50,24 @@ class PostsController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required',
-            'body' => 'required'
+            'body' => 'required',
+            'cover_image' => 'image|nullable|max:1999',
         ]);
+
+        // Handle File Upload
+        if ($request->hasFile('cover_image')) {
+            $path = Storage::putFile('public/cover_images', $request->file('cover_image')); 
+            $fileNameToStore = basename($path);
+        } else {
+            $fileNameToStore = 'noimage.jpg';
+        }
 
         // Create Post
         $post = new Post();
         $post->title = $request->input('title');
         $post->body = $request->input('body');
         $post->user_id = Auth::id();
+        $post->cover_image = $fileNameToStore;
         $post->save();
 
         return redirect('/posts')->with('success', 'Post Created');
@@ -110,12 +121,24 @@ class PostsController extends Controller
 
         $validated = $request->validate([
             'title' => 'required',
-            'body' => 'required'
+            'body' => 'required',
+            'cover_image' => 'image|nullable|max:1999',
         ]);
+
+        // Handle File Upload
+        if ($request->hasFile('cover_image')) {
+            $path = Storage::putFile('public/cover_images', $request->file('cover_image')); 
+            $fileNameToStore = basename($path);
+            if ($post->cover_image !== 'noimage.jpg') {
+                Storage::delete('public/cover_images/'.$post->cover_image);
+            }
+        }
 
         // Update Post
         $post->title = $request->input('title');
         $post->body = $request->input('body');
+        if ($request->hasFile('cover_image'))
+            $post->cover_image = $fileNameToStore;
         $post->save();
 
         return redirect('/posts')->with('success', 'Post Updated');
@@ -134,6 +157,10 @@ class PostsController extends Controller
         // Check for correct user
         if(Auth::id() !== $post->user_id) {
             return redirect("/posts")->with('error', 'Unauthorized Page');
+        }
+
+        if ($post->cover_image !== 'noimage.jpg') {
+            Storage::delete('public/cover_images/'.$post->cover_image);
         }
 
         $post->delete();
